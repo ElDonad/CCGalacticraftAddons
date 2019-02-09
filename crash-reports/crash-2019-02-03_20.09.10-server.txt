@@ -1,0 +1,66 @@
+---- Minecraft Crash Report ----
+// There are four lights!
+
+Time: 03/02/19 20:09
+Description: Exception in server tick loop
+
+java.lang.ArrayIndexOutOfBoundsException: -1496
+	at net.minecraft.world.chunk.NibbleArray.get(NibbleArray.java:38)
+	at net.minecraft.world.chunk.storage.ExtendedBlockStorage.getExtBlockMetadata(ExtendedBlockStorage.java:115)
+	at net.minecraft.world.chunk.Chunk.getBlockMetadata(Chunk.java:606)
+	at net.minecraft.world.chunk.Chunk.func_150812_a(Chunk.java:961)
+	at net.minecraft.world.chunk.Chunk.addTileEntity(Chunk.java:945)
+	at net.minecraft.world.chunk.storage.AnvilChunkLoader.loadEntities(AnvilChunkLoader.java:529)
+	at net.minecraftforge.common.chunkio.ChunkIOProvider.callStage2(ChunkIOProvider.java:41)
+	at net.minecraftforge.common.chunkio.ChunkIOProvider.callStage2(ChunkIOProvider.java:12)
+	at net.minecraftforge.common.util.AsynchronousExecutor.skipQueue(AsynchronousExecutor.java:344)
+	at net.minecraftforge.common.util.AsynchronousExecutor.getSkipQueue(AsynchronousExecutor.java:302)
+	at net.minecraftforge.common.chunkio.ChunkIOExecutor.syncChunkLoad(ChunkIOExecutor.java:12)
+	at net.minecraft.world.gen.ChunkProviderServer.loadChunk(ChunkProviderServer.java:144)
+	at net.minecraft.world.gen.ChunkProviderServer.loadChunk(ChunkProviderServer.java:119)
+	at net.minecraft.world.gen.ChunkProviderServer.provideChunk(ChunkProviderServer.java:221)
+	at net.minecraft.world.World.getChunkFromChunkCoords(World.java:482)
+	at net.minecraft.world.World.getTileEntity(World.java:2804)
+	at micdoodle8.mods.galacticraft.core.world.ChunkLoadingCallback.ticketsLoaded(ChunkLoadingCallback.java:48)
+	at net.minecraftforge.common.ForgeChunkManager.loadWorld(ForgeChunkManager.java:523)
+	at net.minecraftforge.common.ForgeInternalHandler.onDimensionLoad(ForgeInternalHandler.java:64)
+	at cpw.mods.fml.common.eventhandler.ASMEventHandler_0_ForgeInternalHandler_onDimensionLoad_Load.invoke(.dynamic)
+	at cpw.mods.fml.common.eventhandler.ASMEventHandler.invoke(ASMEventHandler.java:54)
+	at cpw.mods.fml.common.eventhandler.EventBus.post(EventBus.java:140)
+	at net.minecraft.server.integrated.IntegratedServer.loadAllWorlds(IntegratedServer.java:74)
+	at net.minecraft.server.integrated.IntegratedServer.startServer(IntegratedServer.java:96)
+	at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:445)
+	at net.minecraft.server.MinecraftServer$2.run(MinecraftServer.java:752)
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- System Details --
+Details:
+	Minecraft Version: 1.7.10
+	Operating System: Windows 7 (amd64) version 6.1
+	Java Version: 1.8.0_201, Oracle Corporation
+	Java VM Version: Java HotSpot(TM) 64-Bit Server VM (mixed mode), Oracle Corporation
+	Memory: 894739720 bytes (853 MB) / 1223163904 bytes (1166 MB) up to 7635730432 bytes (7282 MB)
+	JVM Flags: 1 total; -Xmx8G
+	AABB Pool Size: 0 (0 bytes; 0 MB) allocated, 0 (0 bytes; 0 MB) used
+	IntCache: cache: 0, tcache: 0, allocated: 0, tallocated: 0
+	FML: MCP v9.05 FML v7.10.99.99 Minecraft Forge 10.13.4.1558 10 mods loaded, 10 mods active
+	States: 'U' = Unloaded 'L' = Loaded 'C' = Constructed 'H' = Pre-initialized 'I' = Initialized 'J' = Post-initialized 'A' = Available 'D' = Disabled 'E' = Errored
+	UCHIJAA	mcp{9.05} [Minecraft Coder Pack] (minecraft.jar) 
+	UCHIJAA	FML{7.10.99.99} [Forge Mod Loader] (forgeSrc-1.7.10-10.13.4.1558-1.7.10.jar) 
+	UCHIJAA	Forge{10.13.4.1558} [Minecraft Forge] (forgeSrc-1.7.10-10.13.4.1558-1.7.10.jar) 
+	UCHIJAA	CodeChickenCore{1.0.7.47} [CodeChicken Core] (minecraft.jar) 
+	UCHIJAA	Micdoodlecore{} [Micdoodle8 Core] (minecraft.jar) 
+	UCHIJAA	NotEnoughItems{1.0.5.120} [Not Enough Items] (NotEnoughItems-1.7.10-1.0.5.120-universal.jar) 
+	UCHIJAA	ComputerCraft{1.75} [ComputerCraft] (ComputerCraft1.75.jar) 
+	UCHIJAA	GalacticraftCore{3.0.12} [Galacticraft Core] (GalacticraftCore-Dev-1.7-3.0.12.504.jar) 
+	UCHIJAA	ccgalacticraftaddon{0.1a} [CCGalacticraft Addons] (bin) 
+	UCHIJAA	GalacticraftMars{3.0.12} [Galacticraft Planets] (Galacticraft-Planets-Dev-1.7-3.0.12.504.jar) 
+	GL info: ~~ERROR~~ RuntimeException: No OpenGL context found in the current thread.
+	Profiler Position: N/A (disabled)
+	Vec3 Pool Size: 0 (0 bytes; 0 MB) allocated, 0 (0 bytes; 0 MB) used
+	Player Count: 0 / 8; []
+	Type: Integrated Server (map_client.txt)
+	Is Modded: Definitely; Client brand changed to 'fml,forge'

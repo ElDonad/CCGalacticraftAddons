@@ -1,0 +1,13 @@
+.gradle/*
+.settings/*
+libs/*
+logs/*
+mods/*
+ressourcepacks
+.classpath
+.project
+build.gradle
+gradlew
+*.bat
+usernamecache.json
+README.txt
