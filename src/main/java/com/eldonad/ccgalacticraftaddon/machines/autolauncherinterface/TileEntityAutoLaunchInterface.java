@@ -18,18 +18,54 @@ import scala.Console;
 public class TileEntityAutoLaunchInterface extends TileEntity implements IPeripheral{
 
 	public int targetDestinationNumber;
+	public int newLaunchState;
 	public boolean dirty;
 	
 	private Class<?> autoLauncherClass;
 	private Method setDestinationFrequency;
+	private Method setLaunchDropdownSelection;
+	public enum LaunchTimer{
+		NONE(0,"none"),
+		INSTANT(3, "instant"),
+		TIME_10SEC(4, "10sec"),
+		TIME_30SEC(5, "30sec"),
+		TIME_1MIN(6, "1min"),
+		REDSTONE_POWERED(7, "redstonePowered");
+		
+		
+		private final int value;
+		private final String title;
+		private LaunchTimer(int value, String title) {
+			this.value = value;
+			this.title = title;
+		}
+		
+		public int getValue() {return this.value;}
+		public String getTitle() {return this.title;}
+		
+		public static LaunchTimer fromTitle(String title) {
+			Console.out().println("-" + title + "-");
+			LaunchTimer[] values = LaunchTimer.class.getEnumConstants();
+			for (LaunchTimer i : values) {
+				if (title.equals( i.getTitle())) { 
+					return i;
+				}
+			}
+			return null;
+		}
+		
+	}
 
 	public static final String autoLauncherPath = "micdoodle8.mods.galacticraft.planets.mars.tile.TileEntityLaunchController";
 	
 	public TileEntityAutoLaunchInterface() {
 		dirty = false;
+		newLaunchState = 0;
 		try {
 			autoLauncherClass = Class.forName(autoLauncherPath);
 			setDestinationFrequency = autoLauncherClass.getMethod("setDestinationFrequency", int.class);
+			setLaunchDropdownSelection = autoLauncherClass.getMethod("setLaunchDropdownSelection", int.class);
+			
 		} catch (ClassNotFoundException e) {
 			Console.out().println("class not found");
 		} catch (NoSuchMethodException e){
@@ -64,6 +100,7 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 	@Override
 	public void readFromNBT(NBTTagCompound tag) {
 		this.targetDestinationNumber = tag.getInteger("destination_number");
+		this.newLaunchState = tag.getInteger("new_launch_state");
 	}
 
 
@@ -71,6 +108,7 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 	@Override
 	public void writeToNBT(NBTTagCompound tag) {
 		tag.setInteger("destination_number", targetDestinationNumber);
+		tag.setInteger("new_launch_state", newLaunchState);
 	}
 
 
@@ -83,7 +121,8 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 	@Override
 	public String[] getMethodNames() {
 		return new String[] {
-			"setDestination"
+			"setDestination",
+			"setLaunchState"
 		};
 	}
 
@@ -91,10 +130,22 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 	public Object[] callMethod(IComputerAccess computer, ILuaContext context, int method, Object[] arguments)
 			throws LuaException, InterruptedException {
 		switch (method) {
-		case 0:			
+		case 0: //setDestination	
 			targetDestinationNumber = ((Double)arguments[0]).intValue();
 			dirty = true;
 			Console.out().print("set new destination");
+			return null;
+			
+		case 1:
+			LaunchTimer newState = LaunchTimer.fromTitle((String)arguments[0]);
+			if (newState != null) {
+				this.newLaunchState = newState.getValue();
+				dirty = true;
+
+			}
+			else {
+				throw new LuaException("Bad argument");
+			}
 			return null;
 		}
 		throw new LuaException("Invalid method");
@@ -127,6 +178,9 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 						if (entity != null && entity.getClass() == autoLauncherClass) {
 							try {
 								setDestinationFrequency.invoke(entity, targetDestinationNumber);
+								if (this.newLaunchState != 0) {
+									setLaunchDropdownSelection.invoke(entity, this.newLaunchState);
+								}
 							} catch (IllegalAccessException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();

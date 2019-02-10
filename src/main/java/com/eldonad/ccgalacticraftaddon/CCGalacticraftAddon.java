@@ -11,7 +11,7 @@ import dan200.computercraft.api.ComputerCraftAPI;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemBlock;
 
-@Mod(modid=CCGalacticraftAddon.MODID, version = CCGalacticraftAddon.VERSION, dependencies="required-after:GalacticraftCore; required-after:GalacticraftMars")
+@Mod(modid=CCGalacticraftAddon.MODID, version = CCGalacticraftAddon.VERSION, dependencies="required-after:GalacticraftCore; required-after:GalacticraftMars; required-after:ComputerCraft")
 public class CCGalacticraftAddon {
 	public static final String MODID = "ccgalacticraftaddon";
 	public static final String VERSION = "0.1a";
