@@ -2,6 +2,8 @@
 .settings/*
 logs/*
 mods/*
+saves/*
+eclipse/*
 ressourcepacks
 .classpath
 .project
@@ -9,3 +11,6 @@ build.gradle
 gradlew
 *.bat
 usernamecache.json
+screenshots/*
+bin/*
+crash-reports/*
