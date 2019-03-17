@@ -2,12 +2,16 @@ package com.eldonad.ccgalacticraftaddon.machines.autolauncherinterface;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
+import com.eldonad.ccgalacticraftaddon.utils.CCGalacticraftAddonPacketHandler;
+import com.eldonad.ccgalacticraftaddon.utils.messages.SetScheduledStateMessageHandler;
 
 import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.lua.LuaException;
 import dan200.computercraft.api.peripheral.IComputerAccess;
 import dan200.computercraft.api.peripheral.IPeripheral;
-import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
@@ -19,11 +23,17 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 
 	public int targetDestinationNumber;
 	public int newLaunchState;
+	
+	private final ReentrantLock getSheduleStateLock = new ReentrantLock();
+	private final Condition scheduleStateUpdated = getSheduleStateLock.newCondition();
 	public boolean dirty;
 	
-	private Class<?> autoLauncherClass;
-	private Method setDestinationFrequency;
-	private Method setLaunchDropdownSelection;
+	public Class<?> autoLauncherClass;
+	public Method setDestinationFrequency;
+	public Method setLaunchDropdownSelection;
+	public Method setDisabled;
+	public Method getDisabled;
+	
 	public enum LaunchTimer{
 		NONE(0,"none"),
 		INSTANT(3, "instant"),
@@ -65,13 +75,14 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 			autoLauncherClass = Class.forName(autoLauncherPath);
 			setDestinationFrequency = autoLauncherClass.getMethod("setDestinationFrequency", int.class);
 			setLaunchDropdownSelection = autoLauncherClass.getMethod("setLaunchDropdownSelection", int.class);
+			setDisabled = autoLauncherClass.getMethod("setDisabled", int.class, boolean.class);
+			getDisabled = autoLauncherClass.getMethod("getDisabled", int.class);
 			
 		} catch (ClassNotFoundException e) {
 			Console.out().println("class not found");
 		} catch (NoSuchMethodException e){
 			Console.out().println("method not found");
 		}
-		
 		
 	}
 
@@ -122,7 +133,9 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 	public String[] getMethodNames() {
 		return new String[] {
 			"setDestination",
-			"setLaunchState"
+			"setLaunchState",
+			"toggleSchedule",
+			"getScheduleState"
 		};
 	}
 
@@ -136,7 +149,7 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 			Console.out().print("set new destination");
 			return null;
 			
-		case 1:
+		case 1: //setLaunchState
 			LaunchTimer newState = LaunchTimer.fromTitle((String)arguments[0]);
 			if (newState != null) {
 				this.newLaunchState = newState.getValue();
@@ -147,7 +160,51 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 				throw new LuaException("Bad argument");
 			}
 			return null;
+			
+		case 2: //toggleSchedule
+			boolean scheduleState;
+			try {
+				scheduleState = (Boolean)arguments[0];
+			}
+			catch(ClassCastException e) {
+				throw new LuaException("Bad argument : not bool");
+			}
+			catch (ArrayIndexOutOfBoundsException e){
+				throw new LuaException("Bad argument number : need 1");
+			}
+			CCGalacticraftAddonPacketHandler.INSTANCE.sendToServer(new SetScheduledStateMessageHandler.SetScheduleStateMessage(scheduleState, this.xCoord, this.yCoord, this.zCoord, this.worldObj.provider.dimensionId));
+			this.dirty = true;
+			return null;
+			
+		case 3: //getLaunchState
+			/*CCGalacticraftAddonPacketHandler.INSTANCE.sendToServer(new PacketGetScheduleState.RequestMessage(xCoord, yCoord, zCoord, worldObj.provider.dimensionId));
+			getSheduleStateLock.lock();
+			Console.out().println("now awaiting waking up " + Boolean.toString(worldObj.isRemote));
+			while (this.isScheduleStateUpdated != true) {
+				scheduleStateUpdated.await();
+				Console.out().println("Check update...");
+			}
+			Console.out().println("Sync done");
+			this.isScheduleStateUpdated = false;
+			return new Object[] {updatedScheduleState};*/
+			TileEntity launcher = getLauncher();
+			try {
+				boolean truc = (Boolean)getDisabled.invoke(launcher, 1);
+				Console.out().print(truc);
+				return new Object[] {truc};
+			} catch (IllegalAccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		}
+		
 		throw new LuaException("Invalid method");
 	}
 
@@ -161,6 +218,17 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 	public void detach(IComputerAccess computer) {
 		
 	}
+	
+	public void notifyScheduleStateUpdate(boolean newState) {
+		getSheduleStateLock.lock();
+		try {
+			Console.out().println("Update received. beginning of sync..." + Boolean.toString(worldObj.isRemote));
+			scheduleStateUpdated.signalAll();
+		}
+		finally {
+			getSheduleStateLock.unlock();
+		}
+	}
 
 	@Override
 	public boolean equals(IPeripheral other) {
@@ -171,31 +239,41 @@ public class TileEntityAutoLaunchInterface extends TileEntity implements IPeriph
 	public void updateEntity() {	
 		if (!worldObj.isRemote && dirty == true) {
 			
-			for (int x = this.xCoord - 1; x <= this.xCoord + 1; ++x) {
-				for (int y = this.yCoord - 1; y <= this.yCoord + 1; ++y) {
-					for (int z = this.zCoord - 1; z <= this.zCoord + 1; ++z) {
-						TileEntity entity = this.getWorldObj().getTileEntity(x, y, z);
-						if (entity != null && entity.getClass() == autoLauncherClass) {
-							try {
-								setDestinationFrequency.invoke(entity, targetDestinationNumber);
-								if (this.newLaunchState != 0) {
-									setLaunchDropdownSelection.invoke(entity, this.newLaunchState);
-								}
-							} catch (IllegalAccessException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							} catch (IllegalArgumentException e) {
-								// TODO Auto-generated catch block
-								Console.out().println("problème d'argument");
-							} catch (InvocationTargetException e) {
-								// TODO Auto-generated catch block
-								Console.out().println("problème sur l'objet");
-							}
-						}
+			TileEntity entity = getLauncher();
+			if (entity != null) {
+				try {
+					setDestinationFrequency.invoke(entity, targetDestinationNumber);
+					if (this.newLaunchState != 0) {
+						setLaunchDropdownSelection.invoke(entity, this.newLaunchState);
 					}
+					
+				} catch (IllegalAccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalArgumentException e) {
+					// TODO Auto-generated catch block
+					Console.out().println("problème d'argument");
+				} catch (InvocationTargetException e) {
+					// TODO Auto-generated catch block
+					Console.out().println("problème sur l'objet");
 				}
 			}
 		}
 		dirty = false;
 	}
+	
+	public TileEntity getLauncher() {
+		for (int x = this.xCoord - 1; x <= this.xCoord + 1; ++x) {
+			for (int y = this.yCoord - 1; y <= this.yCoord + 1; ++y) {
+				for (int z = this.zCoord - 1; z <= this.zCoord + 1; ++z) {
+					TileEntity entity = this.getWorldObj().getTileEntity(x, y, z);
+					if (entity != null && entity.getClass() == autoLauncherClass) {
+						return entity;
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
 }

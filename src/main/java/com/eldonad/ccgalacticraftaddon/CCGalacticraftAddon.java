@@ -2,6 +2,7 @@ package com.eldonad.ccgalacticraftaddon;
 
 import com.eldonad.ccgalacticraftaddon.machines.autolauncherinterface.AutoLaunchInterfaceBlock;
 import com.eldonad.ccgalacticraftaddon.machines.autolauncherinterface.TileEntityAutoLaunchInterface;
+import com.eldonad.ccgalacticraftaddon.utils.CCGalacticraftAddonPacketHandler;
 
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
@@ -16,7 +17,7 @@ import net.minecraft.item.ItemBlock;
 public class CCGalacticraftAddon {
 	public static final String GC_CORE_MODID = "GalacticraftCore";
 	public static final String MODID = "ccgalacticraftaddon";
-	public static final String VERSION = "0.1a";
+	public static final String VERSION = "0.1.2a";
 	public static CCGalacticraftAddonPeripheralProvider provider = new CCGalacticraftAddonPeripheralProvider();
 	
 	public static Block autoLauncherInterfaceBlock = new AutoLaunchInterfaceBlock();
@@ -34,6 +35,7 @@ public class CCGalacticraftAddon {
 	@EventHandler
 	public void init(FMLInitializationEvent event){
 		RecipeRegister.register();
+		CCGalacticraftAddonPacketHandler.registerMessages();
 	}
 	
 }
